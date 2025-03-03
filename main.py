@@ -1,21 +1,15 @@
-from graphics import Window, Point, Line
-
+from graphics import Window, Point, Line, Cell
 
 def main():
     win = Window(800, 600)
-    tl = (2, 2)
-    tr = (798, 2)
-    bl = (2, 598)
-    br = (798, 598)
-    top = Line(Point(*tl), Point(*tr))
-    bottom = Line(Point(*bl), Point(*br))
-    left = Line(Point(*tl), Point(*bl))
-    right = Line(Point(*tr), Point(*br))
-
-    win.draw_line(top, "red")
-    win.draw_line(bottom, "black")
-    win.draw_line(left, "green")
-    win.draw_line(right, "blue")
+    cell1 = Cell(win, Point(2, 2), Point(12, 12))
+    cell1.draw('red')
+    cell2 = Cell(win, Point(200, 20), Point(210, 30), walls={'b': False})
+    cell2.draw('black')
+    cell3 = Cell(win, Point(650, 500), Point(660, 510), walls={'b': False, 'l':False, 't':False})
+    cell3.draw('red')
+    cell4 = Cell(win, Point(650, 500), Point(660, 510), walls={'r': False})
+    cell4.draw('green')
     win.wait_for_close()
 
 
