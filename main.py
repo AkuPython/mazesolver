@@ -1,15 +1,15 @@
-from graphics import Window, Point, Line, Cell
+from graphics import Window, Point, Line, Cell, Maze
 
 def main():
-    win = Window(800, 600)
-    cell1 = Cell(win, Point(2, 2), Point(12, 12))
-    cell1.draw('red')
-    cell2 = Cell(win, Point(200, 20), Point(210, 30), walls={'b': False})
-    cell2.draw('black')
-    cell3 = Cell(win, Point(650, 500), Point(660, 510), walls={'b': False, 'l':False, 't':False})
-    cell3.draw('red')
-    cell4 = Cell(win, Point(650, 500), Point(660, 510), walls={'r': False})
-    cell4.draw('green')
+    num_cols = 16
+    num_rows = 12
+    margin = 50
+    screen_x = 800
+    screen_y = 600
+    cell_size_x = (screen_x - 2 * margin) / num_cols
+    cell_size_y = (screen_y - 2 * margin) / num_rows
+    win = Window(screen_x, screen_y)
+    maze = Maze(win, margin, margin, num_rows, num_cols, cell_size_x, cell_size_y)
     win.wait_for_close()
 
 

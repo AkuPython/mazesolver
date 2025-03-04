@@ -1,14 +1,15 @@
 from tkinter import Tk, BOTH, Canvas
-
+import time
 
 class Window:
     def __init__(self, width, height):
         self.__root = Tk()
         self.__root.title("Maze Solver")
         self.__root.protocol("WM_DELETE_WINDOW", self.close)
-        self.__canvas = Canvas(self.__root, bg="white", width=width, height=height)
+        self.__canvas = Canvas(self.__root, bg="black", width=width, height=height)
         self.__canvas.pack(fill=BOTH, expand=1)
         self.__running = False
+        self.__size = (width, height)
 
     def redraw(self):
         self.__root.update_idletasks()
@@ -31,6 +32,9 @@ class Window:
             self.__canvas.delete(line.tags[0])
         else:
             raise Exception('There needs to be (only) 1 tag')
+
+    def get_size(self):
+        return self.__size
 
 
 class Point:
@@ -57,7 +61,7 @@ class Line:
 
 
 class Cell:
-    def __init__(self, window, point_a, point_b, walls=None):
+    def __init__(self, window, x1, y1, x2, y2, walls=None):
         if walls is None:
             walls = {}
         walls.setdefault('t', True)
@@ -65,8 +69,8 @@ class Cell:
         walls.setdefault('l', True)
         walls.setdefault('r', True)
         self.walls = walls
-        self._p1 = point_a
-        self._p2 = point_b
+        self._p1 = Point(x1, y1)
+        self._p2 = Point(x2, y2)
         self._win = window
 
     def draw(self, fill_color='white'):
@@ -99,4 +103,47 @@ class Cell:
                 self._win.draw_line(line, fill_color)
             else:
                 self._win.delete_line(line)
+
+    def draw_move(self, to_cell, undo=False):
+        color = "gray" if undo else "red"
+        center1 = Point((self._p1.x + self._p2.x) // 2, (self._p1.y + self._p2.y) // 2)
+        center2 = Point((to_cell._p1.x + to_cell._p2.x) // 2, (to_cell._p1.y + to_cell._p2.y) // 2)
+        line = Line(center1, center2)
+        self._win.draw_line(line, color)
+
+
+class Maze:
+    def __init__(self, window, x1, y1, num_rows, num_cols, cell_size_x, cell_size_y):
+        if window.get_size()[0] - x1 < num_cols * cell_size_x or window.get_size()[1] - y1 < num_rows * cell_size_y:
+            raise Exception(f'Window size too small...',
+                            f'Window={window.get_size()}',
+                            f'Row={num_cols} * {cell_size_x} = {num_cols * cell_size_x}',
+                            f'Col={num_rows} * {cell_size_y} = {num_rows * cell_size_y}')
+        self._win = window
+        self._cells = []
+        self.__x1 = x1
+        self.__y1 = y1
+        self.__num_rows = num_rows
+        self.__num_cols = num_cols
+        self.__cell_size_x = cell_size_x
+        self.__cell_size_y = cell_size_y
+
+    def _create_cells(self):
+        x = self.__x1
+        y = self.__y1
+        for _ in range(self.__num_rows):
+            row = []
+            y += self.__cell_size_y
+            for _ in range(self.__num_cols):
+                row.append(Cell(self._win, x, y, x + self.__cell_size_x, y + self.__cell_size_y))
+                x += self.__cell_size_x
+            self._cells.append(row)
+
+    def _draw_cell(self, i, j):
+        self._cells[i][j].draw()
+
+    def _animate(self):
+        self._win.redraw()
+        time.sleep(0.1)
+
 
