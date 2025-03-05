@@ -123,7 +123,7 @@ class Cell:
 
 
 class Maze:
-    animate_speed = 0.25
+    animate_speed = 0.005
     opposites = {'t': 'b', 'b': 't', 'l': 'r', 'r': 'l'}
     moves = {'t': (0, -1), 'b': (0, 1), 'l': (-1, 0), 'r': (1, 0)}
     
