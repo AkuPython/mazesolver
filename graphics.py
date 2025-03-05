@@ -1,5 +1,6 @@
 from tkinter import Tk, BOTH, Canvas
 import time
+import random
 
 class Window:
     def __init__(self, width, height):
@@ -42,6 +43,9 @@ class Point:
         self.x = x
         self.y = y
 
+    def __repr__(self):
+        return f'({self.x:.2f}, {self.y:.2f})'
+
 
 class Line:
     def __init__(self, point_a, point_b):
@@ -72,8 +76,14 @@ class Cell:
         self._p1 = Point(x1, y1)
         self._p2 = Point(x2, y2)
         self._win = window
+        self.visited = False
+
+    def __repr__(self):
+        return f'{self._p1}; {self._p2}; {[k for k,v in self.walls.items() if v]}'
 
     def draw(self, fill_color='white'):
+        if self._win is None:
+            return
         def wall_helper(d, p1, p2):
             '''
             tl = p1x,p1y
@@ -113,7 +123,11 @@ class Cell:
 
 
 class Maze:
-    def __init__(self, window, x1, y1, num_rows, num_cols, cell_size_x, cell_size_y):
+    animate_speed = 0.25
+    opposites = {'t': 'b', 'b': 't', 'l': 'r', 'r': 'l'}
+    moves = {'t': (0, -1), 'b': (0, 1), 'l': (-1, 0), 'r': (1, 0)}
+    
+    def __init__(self, window, x1, y1, num_rows, num_cols, cell_size_x, cell_size_y, seed=None):
         if window is not None and (window.get_size()[0] - x1 < num_cols * cell_size_x or window.get_size()[1] - y1 < num_rows * cell_size_y):
             raise Exception(f'Window size too small...',
                             f'Window={window.get_size()}',
@@ -129,6 +143,11 @@ class Maze:
         self.__cell_size_y = cell_size_y
         self._create_cells()
         self._break_entrance_and_exit()
+        self.__seed = seed
+        if self.__seed is not None:
+            random.seed(self.__seed)
+        self._break_walls_r(0,0)
+        self._reset_cells_visited()
 
     def _create_cells(self):
         x = self.__x1
@@ -149,7 +168,7 @@ class Maze:
 
     def _animate(self):
         self._win.redraw()
-        time.sleep(0.1)
+        time.sleep(self.animate_speed)
 
     def _break_entrance_and_exit(self):
         self._cells[0][0].walls['t'] = False
@@ -157,5 +176,63 @@ class Maze:
         self._cells[-1][-1].walls['b'] = False
         self._draw_cell(-1, -1)
 
+    def _break_walls_r(self, i, j):
+        self._cells[i][j].visited = True
+        while True:
+            to_visit = []
+            if i > 0 and not self._cells[i-1][j].visited:
+                to_visit.append((i-1, j, 'l'))
+            if i < len(self._cells) - 1 and not self._cells[i+1][j].visited:
+                to_visit.append((i+1, j, 'r'))
+            if j > 0 and not self._cells[i][j-1].visited:
+                to_visit.append((i, j-1, 't'))
+            if j < len(self._cells[0]) - 1 and not self._cells[i][j+1].visited:
+                to_visit.append((i, j+1, 'b'))
+            if len(to_visit) == 0:
+                self._cells[i][j].draw()
+                return
+            # if self.__seed is not None:
+                random.seed(self.__seed)
+            new_i, new_j, d = to_visit.pop(random.randrange(len(to_visit)))
+            self._cells[i][j].walls[d] = False
+            self._cells[new_i][new_j].walls[self.opposites[d]] = False
+            self._break_walls_r(new_i, new_j)
 
+    def _reset_cells_visited(self):
+        for i in self._cells:
+            for j in i:
+                j.visited = False
 
+    def get_cell(self, i, j, d=None):
+        if d:
+            i += self.moves[d][0]
+            j += self.moves[d][1]
+        if i < 0 or (i > len(self._cells) - 1) or j < 0 or (j > len(self._cells[0]) - 1):
+            return False
+        return self._cells[i][j]
+
+    def solve(self, i=0, j=0):
+        return self._solve_r(i, j)
+
+    def _solve_r(self, i, j):
+        def solve_helper(d, current, destination):
+            if current.walls[d] or destination.visited:
+                return False
+            current.draw_move(destination)
+            return True
+        self._animate()
+        current = self.get_cell(i, j)
+        if not current:
+            raise Exception('Solely here for LSP.')
+        current.visited = True
+        if current == self._cells[-1][-1]:
+            return True
+        for d in self.opposites.keys():
+            destination = self.get_cell(i, j, d)
+            if destination and solve_helper(d, current, destination):
+                if self._solve_r(i + self.moves[d][0], j + self.moves[d][1]):
+                    return True
+                current.draw_move(destination, undo=True)
+        return False
+            
+        
