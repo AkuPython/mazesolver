@@ -114,7 +114,7 @@ class Cell:
 
 class Maze:
     def __init__(self, window, x1, y1, num_rows, num_cols, cell_size_x, cell_size_y):
-        if window.get_size()[0] - x1 < num_cols * cell_size_x or window.get_size()[1] - y1 < num_rows * cell_size_y:
+        if window is not None and (window.get_size()[0] - x1 < num_cols * cell_size_x or window.get_size()[1] - y1 < num_rows * cell_size_y):
             raise Exception(f'Window size too small...',
                             f'Window={window.get_size()}',
                             f'Row={num_cols} * {cell_size_x} = {num_cols * cell_size_x}',
@@ -127,17 +127,22 @@ class Maze:
         self.__num_cols = num_cols
         self.__cell_size_x = cell_size_x
         self.__cell_size_y = cell_size_y
+        self._create_cells()
+        self._break_entrance_and_exit()
 
     def _create_cells(self):
         x = self.__x1
-        y = self.__y1
-        for _ in range(self.__num_rows):
+        for _ in range(self.__num_cols):
             row = []
-            y += self.__cell_size_y
-            for _ in range(self.__num_cols):
+            y = self.__y1
+            for _ in range(self.__num_rows):
                 row.append(Cell(self._win, x, y, x + self.__cell_size_x, y + self.__cell_size_y))
-                x += self.__cell_size_x
+                y += self.__cell_size_y
             self._cells.append(row)
+            x += self.__cell_size_x
+        for i in range(self.__num_cols):
+            for j in range(self.__num_rows):
+                self._draw_cell(i, j)
 
     def _draw_cell(self, i, j):
         self._cells[i][j].draw()
@@ -145,5 +150,12 @@ class Maze:
     def _animate(self):
         self._win.redraw()
         time.sleep(0.1)
+
+    def _break_entrance_and_exit(self):
+        self._cells[0][0].walls['t'] = False
+        self._draw_cell(0, 0)
+        self._cells[-1][-1].walls['b'] = False
+        self._draw_cell(-1, -1)
+
 
 
